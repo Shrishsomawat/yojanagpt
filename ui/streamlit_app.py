@@ -532,7 +532,15 @@ def render_chat_input():
         
         with st.chat_message("assistant", avatar="🇮🇳"):
             with st.spinner("Thinking..."):
-                response = orch.chat_for_profile(user_input)
+                try:
+                    response = orch.chat_for_profile(user_input)
+                except Exception as e:
+                    logger.error(f"Chat error: {e}", exc_info=True)
+                    response = (
+                        "I couldn't continue the chat right now because the AI provider is unavailable. "
+                        "Please try again in a moment, add a valid API key in deployment secrets, "
+                        "or use the form mode instead."
+                    )
                 st.write(response)
                 st.session_state.chat_messages.append({"role": "assistant", "content": response})
         
