@@ -227,9 +227,6 @@ def init_session_state():
         if key not in st.session_state:
             st.session_state[key] = value
 
-init_session_state()
-
-
 # ─── Helper Functions ─────────────────────────────────────────────────
 def get_orchestrator() -> YojanaGPTOrchestrator:
     """Get or create orchestrator instance."""
@@ -852,6 +849,7 @@ def render_results():
 
 # ─── Main App ─────────────────────────────────────────────────────────
 def main():
+    init_session_state()
     render_sidebar()
     render_header()
     
