@@ -226,6 +226,8 @@ def init_session_state():
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+        elif st.session_state[key] is None and isinstance(value, (list, dict, str)):
+            st.session_state[key] = value.copy() if isinstance(value, (list, dict)) else value
 
 # ─── Helper Functions ─────────────────────────────────────────────────
 def get_orchestrator() -> YojanaGPTOrchestrator:
@@ -265,8 +267,11 @@ def get_status_badge(status: str) -> str:
 
 def reset_app():
     """Reset the application state."""
-    for key in ["orchestrator", "results", "selected_scheme", "chat_messages", "error_message"]:
-        st.session_state[key] = None
+    st.session_state.orchestrator = None
+    st.session_state.results = None
+    st.session_state.selected_scheme = None
+    st.session_state.chat_messages = []
+    st.session_state.error_message = None
     st.session_state.stage = "input"
     st.session_state.profile_submitted = False
     st.session_state.chat_mode = False
