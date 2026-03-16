@@ -1,0 +1,32 @@
+# ═══════════════════════════════════════════════════════════════
+# YojanaGPT - Dependencies
+# Install: pip install -r requirements.txt
+# ═══════════════════════════════════════════════════════════════
+
+# Core
+pydantic>=2.0
+python-dotenv>=1.0
+
+# LLM Providers (all free)
+groq>=0.4
+requests>=2.31
+
+# Vector Store
+chromadb>=0.4
+
+# Agent Framework
+langchain-core>=0.2
+langgraph>=0.1
+langchain-community>=0.2
+langchain-text-splitters>=0.2
+
+# UI
+streamlit>=1.30
+
+# PDF Generation
+fpdf2>=2.7
+
+# Web Scraping (for future scheme updates)
+beautifulsoup4>=4.12
+
+# Utilities
