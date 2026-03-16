@@ -86,7 +86,7 @@ cp .env.example .env
 
 ```bash
 # Launch the web UI
-streamlit run ui/streamlit_app.py
+streamlit run streamlit_app.py
 
 # Or run CLI demo (no API key needed)
 python run.py --demo
@@ -106,6 +106,36 @@ python run.py --demo
 ```
 
 This runs 3 sample citizen profiles (farmer, student, widow) through the matching engine and shows all eligible schemes.
+
+---
+
+## Public Deployment
+
+If you want other people to use YojanaGPT, sharing the GitHub repo is not enough. You need to deploy the Streamlit app and add one API key at the app level.
+
+### Streamlit Community Cloud
+
+1. Push this repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io/)
+3. Create a new app from this repo
+4. Set the main file path to `streamlit_app.py`
+5. In app settings, add one of these secrets:
+
+```toml
+GROQ_API_KEY = "your_groq_api_key"
+# or
+GEMINI_API_KEY = "your_gemini_api_key"
+```
+
+You can copy the format from [.streamlit/secrets.toml.example](./.streamlit/secrets.toml.example).
+
+### What works without a deployed API key
+
+- Form-based scheme matching still works in rule-based mode
+- Chat mode is disabled
+- Detailed AI-written guides are disabled
+
+That means visitors can still get useful results, but for the best public demo you should deploy with `GROQ_API_KEY` or `GEMINI_API_KEY`.
 
 ---
 
