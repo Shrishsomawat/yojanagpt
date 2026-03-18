@@ -2139,6 +2139,12 @@ VERIFIED_SCHEME_METADATA = {
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },
+    "ADIP": {
+        "official_source_url": "https://adip.depwd.gov.in/",
+        "source_name": "Department of Empowerment of Persons with Disabilities",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
     "DIGILOCKER": {
         "official_source_url": "https://www.digilocker.gov.in/",
         "source_name": "DigiLocker Official Portal",
@@ -2175,9 +2181,33 @@ VERIFIED_SCHEME_METADATA = {
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },
+    "PM-KUSUM": {
+        "official_source_url": "https://pmkusum.mnre.gov.in/",
+        "source_name": "MNRE PM-KUSUM Portal",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
+    "PM-VIDYALAXMI": {
+        "official_source_url": "https://www.vidyalakshmi.co.in/Students/",
+        "source_name": "Vidya Lakshmi Portal",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
     "PM-DAKSH": {
         "official_source_url": "https://pmdaksh.dosje.gov.in/",
         "source_name": "PM-DAKSH Official Portal",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
+    "PMGSY": {
+        "official_source_url": "https://www.pmgsy.nic.in/",
+        "source_name": "PMGSY Official Portal",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
+    "SBM": {
+        "official_source_url": "https://swachhbharatmission.ddws.gov.in/index.php/",
+        "source_name": "Swachh Bharat Mission Gramin Portal",
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },

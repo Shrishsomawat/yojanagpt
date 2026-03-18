@@ -5,6 +5,7 @@ Usage:
     streamlit run:    streamlit run ui/streamlit_app.py
     CLI demo:         python run.py --demo
     Test matching:    python run.py --test
+    Review freshness: python run.py --review
 """
 
 import sys
@@ -296,10 +297,18 @@ def run_test():
     return len(errors) == 0
 
 
+def run_review():
+    """Print a freshness review report for all schemes."""
+    from scripts.review_verified_schemes import print_review_report
+
+    print_review_report()
+
+
 def main():
     parser = argparse.ArgumentParser(description="YojanaGPT - Government Scheme Navigator")
     parser.add_argument("--demo", action="store_true", help="Run CLI demo with sample profiles")
     parser.add_argument("--test", action="store_true", help="Run system tests")
+    parser.add_argument("--review", action="store_true", help="Review scheme freshness status")
     parser.add_argument("--streamlit", action="store_true", help="Launch Streamlit UI")
     
     args = parser.parse_args()
@@ -309,6 +318,8 @@ def main():
     elif args.test:
         success = run_test()
         sys.exit(0 if success else 1)
+    elif args.review:
+        run_review()
     elif args.streamlit:
         os.system(f"streamlit run {PROJECT_ROOT}/ui/streamlit_app.py")
     else:
@@ -317,6 +328,7 @@ def main():
         print("Usage:")
         print("  python run.py --demo       Run CLI demo (no API key needed)")
         print("  python run.py --test       Run system tests")
+        print("  python run.py --review     Review verified vs stale schemes")
         print("  python run.py --streamlit  Launch Streamlit UI")
         print("  streamlit run ui/streamlit_app.py  Launch UI directly")
         print("\nQuick start:")

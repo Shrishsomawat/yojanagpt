@@ -10,6 +10,7 @@ import time
 import logging
 import streamlit as st
 from pathlib import Path
+from datetime import date, datetime
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -20,6 +21,7 @@ from agents.orchestrator import YojanaGPTOrchestrator
 from utils.pdf_generator import generate_report
 from utils.llm_client import llm_client
 from data.schemes_database import get_scheme_count, get_scheme_by_id, get_verified_scheme_count
+from scripts.review_verified_schemes import build_review_report
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -222,6 +224,7 @@ def init_session_state():
         "language": "en",
         "profile_submitted": False,
         "error_message": None,
+        "admin_view": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -269,11 +272,30 @@ def get_verification_badge(scheme: dict) -> str:
     """Render a simple freshness badge for a scheme."""
     status = scheme.get("verification_status", "needs_review")
     verified_on = scheme.get("last_verified_on")
+    review_due_on = scheme.get("review_due_on")
+    due_date = None
+    if review_due_on:
+        try:
+            due_date = datetime.strptime(review_due_on, "%Y-%m-%d").date()
+        except ValueError:
+            due_date = None
+
     if status == "verified":
-        label = f"Verified {verified_on}" if verified_on else "Verified"
-        color = "#6fcf97"
-        border = "#2d6b45"
-        background = "#1a3a2a"
+        if due_date and due_date < date.today():
+            label = f"Overdue review since {review_due_on}"
+            color = "#FFB4B4"
+            border = "#A94442"
+            background = "#3A1F1F"
+        elif due_date and (due_date - date.today()).days <= 7:
+            label = f"Review due {review_due_on}"
+            color = "#F0B429"
+            border = "#6b5a2d"
+            background = "#3a2a0a"
+        else:
+            label = f"Verified {verified_on}" if verified_on else "Verified"
+            color = "#6fcf97"
+            border = "#2d6b45"
+            background = "#1a3a2a"
     else:
         label = "Needs review"
         color = "#F0B429"
@@ -344,7 +366,16 @@ def render_sidebar():
         st.metric("Total Schemes", f"{get_scheme_count()}+")
         st.metric("Verified Fresh", f"{get_verified_scheme_count()}")
         st.caption("Central & State Government Schemes")
-        
+
+        st.divider()
+
+        st.markdown("### 🛠️ Admin")
+        st.session_state.admin_view = st.checkbox(
+            "Show freshness dashboard",
+            value=st.session_state.admin_view,
+            help="View verified, pending, and overdue scheme records.",
+        )
+
         st.divider()
         
         # Mode toggle
@@ -383,6 +414,57 @@ def render_header():
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+
+def render_admin_dashboard():
+    """Show a lightweight review dashboard for scheme freshness."""
+    report = build_review_report()
+
+    st.markdown("### 🛠️ Scheme Freshness Dashboard")
+    st.caption("Use this view to track which schemes are verified, overdue, or still pending manual review.")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total", report["total"])
+    col2.metric("Verified", len(report["verified"]))
+    col3.metric("Pending Review", len(report["needs_review"]))
+    col4.metric("Overdue", len(report["overdue"]))
+
+    if report["overdue"]:
+        st.warning("Some verified schemes are past their review date. Re-check those records before relying on them heavily.")
+    else:
+        st.success("No verified schemes are currently overdue.")
+
+    tab_verified, tab_pending, tab_overdue = st.tabs(["Verified", "Pending Review", "Overdue"])
+
+    with tab_verified:
+        preview = report["verified"][:20]
+        if not preview:
+            st.info("No verified schemes found.")
+        else:
+            for item in preview:
+                st.markdown(
+                    f"**{item['id']}**  \n"
+                    f"{item['name']}  \n"
+                    f"Last verified: `{item['last_verified_on']}` | Review due: `{item['review_due_on']}` | Source: `{item['source']}`"
+                )
+
+    with tab_pending:
+        if not report["needs_review"]:
+            st.info("No pending scheme reviews.")
+        else:
+            for item in report["needs_review"]:
+                st.markdown(f"**{item['id']}**  \n{item['name']}  \nStatus: `{item['status']}`")
+
+    with tab_overdue:
+        if not report["overdue"]:
+            st.info("No overdue verified schemes.")
+        else:
+            for item in report["overdue"]:
+                st.markdown(
+                    f"**{item['id']}**  \n"
+                    f"{item['name']}  \n"
+                    f"Review due: `{item['review_due_on']}` | Source: `{item['source']}`"
+                )
 
 
 # ─── Form Input Mode ─────────────────────────────────────────────────
@@ -691,6 +773,26 @@ def render_results():
         st.info("These results were generated in rule-based mode. Add `GROQ_API_KEY` or `GEMINI_API_KEY` to Streamlit secrets if you want richer AI-written guidance for all visitors.")
 
     st.success("Only schemes marked as currently verified are shown in results. Older records stay hidden until reviewed.")
+
+    due_soon = []
+    overdue = []
+    for match in matches:
+        scheme = match.get("full_scheme") or get_scheme_by_id(match.get("id", ""))
+        if not scheme or not scheme.get("review_due_on"):
+            continue
+        try:
+            due_date = datetime.strptime(scheme["review_due_on"], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if due_date < date.today():
+            overdue.append(scheme["name"])
+        elif (due_date - date.today()).days <= 7:
+            due_soon.append(f"{scheme['name']} ({scheme['review_due_on']})")
+
+    if overdue:
+        st.warning("Some matched schemes are past their review date: " + ", ".join(overdue))
+    elif due_soon:
+        st.warning("Some matched schemes need review soon: " + ", ".join(due_soon))
     
     # ── PDF Download ──────────────────────────────────────────────
     col_dl1, col_dl2, col_dl3 = st.columns([1, 1, 1])
@@ -896,6 +998,10 @@ def main():
     init_session_state()
     render_sidebar()
     render_header()
+
+    if st.session_state.admin_view:
+        render_admin_dashboard()
+        return
     
     if st.session_state.stage == "input":
         if st.session_state.chat_mode:
