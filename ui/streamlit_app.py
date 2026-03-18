@@ -207,6 +207,60 @@ st.markdown("""
         border-radius: 12px;
         padding: 1rem;
     }
+    .intro-panel, .action-panel, .trust-panel {
+        border: 1px solid #30363D;
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+        background: linear-gradient(180deg, rgba(22,27,34,0.98), rgba(13,17,23,0.98));
+        margin-bottom: 1rem;
+    }
+    .intro-panel h3, .action-panel h4, .trust-panel h4 {
+        color: #F3F4F6;
+        margin: 0 0 0.45rem 0;
+    }
+    .intro-panel p, .action-panel p, .trust-panel p {
+        color: #C8CCD0;
+        margin: 0;
+        line-height: 1.45;
+    }
+    .step-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.65rem;
+        margin: 0.9rem 0 1rem 0;
+    }
+    .step-chip {
+        border: 1px solid #30363D;
+        border-radius: 14px;
+        padding: 0.8rem 0.9rem;
+        background: #161B22;
+    }
+    .step-chip strong {
+        display: block;
+        color: #F9FAFB;
+        margin-bottom: 0.2rem;
+    }
+    .step-chip span {
+        color: #9CA3AF;
+        font-size: 0.86rem;
+    }
+    .wizard-shell {
+        border: 1px solid #30363D;
+        border-radius: 16px;
+        padding: 1rem;
+        background: #10151d;
+        margin-bottom: 1rem;
+    }
+    .wizard-step-title {
+        color: #F9FAFB;
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    .wizard-step-copy {
+        color: #9CA3AF;
+        margin-bottom: 0.9rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -225,6 +279,7 @@ def init_session_state():
         "profile_submitted": False,
         "error_message": None,
         "admin_view": False,
+        "form_step": 0,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -319,6 +374,99 @@ def reset_app():
     st.session_state.stage = "input"
     st.session_state.profile_submitted = False
     st.session_state.chat_mode = False
+    st.session_state.form_step = 0
+
+
+FORM_STEPS = [
+    ("Personal", "Basic identity and family context"),
+    ("Background", "Location, category, and income"),
+    ("Work & Study", "Occupation and education details"),
+    ("Special Needs", "Conditions that unlock targeted schemes"),
+]
+
+INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
+    "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
+    "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+    "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
+    "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Delhi", "Jammu and Kashmir", "Ladakh",
+]
+
+
+def render_onboarding_panel():
+    st.markdown(
+        """
+        <div class="intro-panel">
+            <h3>Start In 3 Simple Steps</h3>
+            <p>Tell us about your situation, review verified scheme matches, and leave with documents plus next actions you can actually follow.</p>
+            <div class="step-grid">
+                <div class="step-chip"><strong>1. Share profile</strong><span>Income, occupation, category, and needs.</span></div>
+                <div class="step-chip"><strong>2. See verified matches</strong><span>Only currently reviewed schemes are shown.</span></div>
+                <div class="step-chip"><strong>3. Take action</strong><span>Use official links, documents, and application steps.</span></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def get_form_profile() -> dict:
+    income_map = {
+        "Below Rs 1 Lakh": 80000,
+        "Rs 1 - 2.5 Lakh": 175000,
+        "Rs 2.5 - 5 Lakh": 375000,
+        "Rs 5 - 10 Lakh": 750000,
+        "Rs 10 - 18 Lakh": 1400000,
+        "Above Rs 18 Lakh": 2500000,
+    }
+    occ_map = {
+        "Student": "student", "Farmer": "farmer", "Unemployed": "unemployed",
+        "Self Employed": "self_employed", "Salaried Employee": "salaried",
+        "Daily Wage Worker": "daily_wage", "Homemaker": "homemaker",
+        "Street Vendor": "street_vendor", "Construction Worker": "construction_worker",
+        "Domestic Worker": "domestic_worker", "Retired": "retired", "Other": "other",
+    }
+    edu_map = {
+        "No Formal Education": "no_formal", "Below Class 10": "below_10",
+        "Class 10": "class_10", "Class 12": "class_12",
+        "ITI / Diploma": "diploma", "Undergraduate": "undergraduate",
+        "Postgraduate": "postgraduate", "PhD": "phd",
+    }
+
+    return {
+        "name": st.session_state.get("wizard_name", "").strip(),
+        "age": st.session_state.get("wizard_age", 25),
+        "gender": st.session_state.get("wizard_gender", "Male").lower(),
+        "state": st.session_state.get("wizard_state", "Delhi").lower().replace(" ", "_"),
+        "area_type": st.session_state.get("wizard_area_type", "Urban").lower(),
+        "category": st.session_state.get("wizard_category", "General").lower(),
+        "occupation": occ_map.get(st.session_state.get("wizard_occupation", "Other"), "other"),
+        "income": income_map.get(st.session_state.get("wizard_income", "Rs 2.5 - 5 Lakh"), 375000),
+        "education_level": edu_map.get(st.session_state.get("wizard_education", "Undergraduate"), "undergraduate"),
+        "marital_status": st.session_state.get("wizard_marital_status", "Single").lower(),
+        "dependents": st.session_state.get("wizard_dependents", 0),
+        "is_bpl": st.session_state.get("wizard_is_bpl", False),
+        "has_ration_card": st.session_state.get("wizard_has_ration_card", False),
+        "has_bank_account": st.session_state.get("wizard_has_bank_account", True),
+        "land_ownership": st.session_state.get("wizard_land_ownership", False),
+        "has_disability": st.session_state.get("wizard_has_disability", False),
+        "is_widow": st.session_state.get("wizard_is_widow", False),
+        "is_pregnant": st.session_state.get("wizard_is_pregnant", False),
+        "is_minority": st.session_state.get("wizard_is_minority", False),
+        "is_ex_serviceman": st.session_state.get("wizard_is_ex_serviceman", False),
+        "is_ward_of_esm": st.session_state.get("wizard_is_ex_serviceman", False),
+        "needs_housing": st.session_state.get("wizard_needs_housing", False),
+    }
+
+
+def validate_current_step() -> bool:
+    step = st.session_state.get("form_step", 0)
+    if step == 0 and not st.session_state.get("wizard_name", "").strip():
+        st.error("Please enter your name before moving ahead.")
+        return False
+    return True
 
 
 # ─── Sidebar ──────────────────────────────────────────────────────────
@@ -434,7 +582,7 @@ def render_admin_dashboard():
     else:
         st.success("No verified schemes are currently overdue.")
 
-    tab_verified, tab_pending, tab_overdue = st.tabs(["Verified", "Pending Review", "Overdue"])
+    tab_verified, tab_pending, tab_overdue, tab_archived = st.tabs(["Verified", "Pending Review", "Overdue", "Archived"])
 
     with tab_verified:
         preview = report["verified"][:20]
@@ -466,138 +614,133 @@ def render_admin_dashboard():
                     f"Review due: `{item['review_due_on']}` | Source: `{item['source']}`"
                 )
 
+    with tab_archived:
+        archived = report.get("archived", [])
+        if not archived:
+            st.info("No archived schemes.")
+        else:
+            for item in archived:
+                st.markdown(
+                    f"**{item['id']}**  \n"
+                    f"{item['name']}  \n"
+                    f"Status: `{item['status']}` | Source: `{item['source']}`"
+                )
+
 
 # ─── Form Input Mode ─────────────────────────────────────────────────
 def render_form_input():
-    st.markdown("### 📋 Tell us about yourself")
-    st.caption("Fill in your details below. The more you share, the better we can match schemes for you.")
+    st.markdown("### Tell us about yourself")
+    st.caption("Use the guided form below. It is designed to feel lighter on mobile and more practical for first-time users.")
+    render_onboarding_panel()
 
     if not has_remote_llm():
-        st.info("This deployment is currently using rule-based matching, so the form is the most reliable option for public visitors.")
-    
-    # Create columns for better layout
-    with st.form("profile_form", clear_on_submit=False):
-        col1, col2, col3 = st.columns(3)
-        
+        st.info("This deployment is currently using rule-based matching, so the guided form is the most reliable option for public visitors.")
+
+    current_step = st.session_state.get("form_step", 0)
+    step_labels = [f"{idx + 1}. {title}" for idx, (title, _) in enumerate(FORM_STEPS)]
+    selected_label = st.radio(
+        "Progress",
+        options=step_labels,
+        index=current_step,
+        horizontal=True,
+        key="wizard_step_selector",
+    )
+    current_step = step_labels.index(selected_label)
+    st.session_state.form_step = current_step
+    step_title, step_copy = FORM_STEPS[current_step]
+
+    st.markdown(
+        f"""
+        <div class="wizard-shell">
+            <div class="wizard-step-title">Step {current_step + 1}: {step_title}</div>
+            <div class="wizard-step-copy">{step_copy}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if current_step == 0:
+        col1, col2 = st.columns(2)
         with col1:
-            st.markdown("**👤 Personal Details**")
-            name = st.text_input("Full Name *", placeholder="Enter your full name")
-            age = st.number_input("Age *", min_value=0, max_value=120, value=25, step=1)
-            gender = st.selectbox("Gender *", ["Male", "Female", "Other"])
-            marital_status = st.selectbox("Marital Status", [
-                "Single", "Married", "Widowed", "Divorced", "Separated"
-            ])
-            dependents = st.number_input("Number of Dependents", min_value=0, max_value=20, value=0)
-        
+            st.text_input("Full Name *", key="wizard_name", placeholder="Enter your full name")
+            st.number_input("Age *", min_value=0, max_value=120, step=1, key="wizard_age", value=25)
+            st.selectbox("Gender *", ["Male", "Female", "Other"], key="wizard_gender")
         with col2:
-            st.markdown("**📍 Location & Background**")
-            state = st.selectbox("State *", [
-                "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
-                "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
-                "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
-                "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
-                "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-                "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-                "Delhi", "Jammu and Kashmir", "Ladakh",
-            ])
-            area_type = st.selectbox("Area Type *", ["Rural", "Urban"])
-            category = st.selectbox("Category *", [
-                "General", "OBC", "SC", "ST", "EWS"
-            ])
-            occupation = st.selectbox("Occupation *", [
-                "Student", "Farmer", "Unemployed", "Self Employed",
-                "Salaried Employee", "Daily Wage Worker", "Homemaker",
-                "Street Vendor", "Construction Worker", "Domestic Worker",
-                "Retired", "Other"
-            ])
-            income = st.selectbox("Annual Family Income (approx) *", [
-                "Below ₹1 Lakh", "₹1 - 2.5 Lakh", "₹2.5 - 5 Lakh",
-                "₹5 - 10 Lakh", "₹10 - 18 Lakh", "Above ₹18 Lakh"
-            ])
-        
+            st.selectbox(
+                "Marital Status",
+                ["Single", "Married", "Widowed", "Divorced", "Separated"],
+                key="wizard_marital_status",
+            )
+            st.number_input("Number of Dependents", min_value=0, max_value=20, step=1, key="wizard_dependents", value=0)
+
+    elif current_step == 1:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.selectbox("State *", INDIAN_STATES, key="wizard_state")
+            st.selectbox("Area Type *", ["Rural", "Urban"], key="wizard_area_type")
+        with col2:
+            st.selectbox("Category *", ["General", "OBC", "SC", "ST", "EWS"], key="wizard_category")
+            st.selectbox(
+                "Annual Family Income (approx) *",
+                ["Below Rs 1 Lakh", "Rs 1 - 2.5 Lakh", "Rs 2.5 - 5 Lakh", "Rs 5 - 10 Lakh", "Rs 10 - 18 Lakh", "Above Rs 18 Lakh"],
+                key="wizard_income",
+            )
+
+    elif current_step == 2:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.selectbox(
+                "Occupation *",
+                [
+                    "Student", "Farmer", "Unemployed", "Self Employed",
+                    "Salaried Employee", "Daily Wage Worker", "Homemaker",
+                    "Street Vendor", "Construction Worker", "Domestic Worker",
+                    "Retired", "Other",
+                ],
+                key="wizard_occupation",
+            )
+        with col2:
+            st.selectbox(
+                "Education Level",
+                ["No Formal Education", "Below Class 10", "Class 10", "Class 12", "ITI / Diploma", "Undergraduate", "Postgraduate", "PhD"],
+                key="wizard_education",
+            )
+
+    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.checkbox("BPL Card Holder", key="wizard_is_bpl")
+            st.checkbox("Has Ration Card", key="wizard_has_ration_card")
+            st.checkbox("Has Bank Account", key="wizard_has_bank_account", value=True)
+            st.checkbox("Owns Agricultural Land", key="wizard_land_ownership")
+        with col2:
+            st.checkbox("Person with Disability", key="wizard_has_disability")
+            st.checkbox("Widow", key="wizard_is_widow")
+            st.checkbox("Pregnant / Lactating Mother", key="wizard_is_pregnant")
         with col3:
-            st.markdown("**📚 Education & Special**")
-            education = st.selectbox("Education Level", [
-                "No Formal Education", "Below Class 10", "Class 10",
-                "Class 12", "ITI / Diploma", "Undergraduate", "Postgraduate", "PhD"
-            ])
-            
-            st.markdown("**Special Conditions** (select all that apply)")
-            is_bpl = st.checkbox("BPL Card Holder")
-            has_ration_card = st.checkbox("Has Ration Card")
-            has_bank_account = st.checkbox("Has Bank Account", value=True)
-            land_ownership = st.checkbox("Owns Agricultural Land")
-            has_disability = st.checkbox("Person with Disability")
-            is_widow = st.checkbox("Widow")
-            is_pregnant = st.checkbox("Pregnant / Lactating Mother")
-            is_minority = st.checkbox("Belongs to Minority Community")
-            is_ex_serviceman = st.checkbox("Ex-Serviceman / Ward of Ex-Serviceman")
-            needs_housing = st.checkbox("Needs Housing / No Pucca House")
-        
-        st.divider()
-        submitted = st.form_submit_button(
-            "🔍 Find My Schemes", 
-            use_container_width=True,
-            type="primary"
-        )
-        
-        if submitted:
-            if not name.strip():
-                st.error("Please enter your name.")
+            st.checkbox("Belongs to Minority Community", key="wizard_is_minority")
+            st.checkbox("Ex-Serviceman / Ward of Ex-Serviceman", key="wizard_is_ex_serviceman")
+            st.checkbox("Needs Housing / No Pucca House", key="wizard_needs_housing")
+
+    progress_value = int(((current_step + 1) / len(FORM_STEPS)) * 100)
+    st.progress(progress_value, text=f"Form completion step {current_step + 1} of {len(FORM_STEPS)}")
+
+    nav_col1, nav_col2, nav_col3 = st.columns([1, 1, 2])
+    with nav_col1:
+        if current_step > 0 and st.button("Back", use_container_width=True):
+            st.session_state.form_step = current_step - 1
+            st.rerun()
+    with nav_col2:
+        if current_step < len(FORM_STEPS) - 1 and st.button("Next", use_container_width=True, type="secondary"):
+            if validate_current_step():
+                st.session_state.form_step = current_step + 1
+                st.rerun()
+    with nav_col3:
+        if current_step == len(FORM_STEPS) - 1 and st.button("Find My Schemes", use_container_width=True, type="primary"):
+            profile = get_form_profile()
+            if not profile["name"]:
+                st.error("Please enter your name before searching.")
                 return
-            
-            # Convert income range to number
-            income_map = {
-                "Below ₹1 Lakh": 80000,
-                "₹1 - 2.5 Lakh": 175000,
-                "₹2.5 - 5 Lakh": 375000,
-                "₹5 - 10 Lakh": 750000,
-                "₹10 - 18 Lakh": 1400000,
-                "Above ₹18 Lakh": 2500000,
-            }
-            
-            # Convert occupation
-            occ_map = {
-                "Student": "student", "Farmer": "farmer", "Unemployed": "unemployed",
-                "Self Employed": "self_employed", "Salaried Employee": "salaried",
-                "Daily Wage Worker": "daily_wage", "Homemaker": "homemaker",
-                "Street Vendor": "street_vendor", "Construction Worker": "construction_worker",
-                "Domestic Worker": "domestic_worker", "Retired": "retired", "Other": "other",
-            }
-            
-            # Convert education
-            edu_map = {
-                "No Formal Education": "no_formal", "Below Class 10": "below_10",
-                "Class 10": "class_10", "Class 12": "class_12",
-                "ITI / Diploma": "diploma", "Undergraduate": "undergraduate",
-                "Postgraduate": "postgraduate", "PhD": "phd",
-            }
-            
-            profile = {
-                "name": name.strip(),
-                "age": age,
-                "gender": gender.lower(),
-                "state": state.lower().replace(" ", "_"),
-                "area_type": area_type.lower(),
-                "category": category.lower(),
-                "occupation": occ_map.get(occupation, occupation.lower()),
-                "income": income_map.get(income, 300000),
-                "education_level": edu_map.get(education, education.lower()),
-                "marital_status": marital_status.lower(),
-                "dependents": dependents,
-                "is_bpl": is_bpl,
-                "has_ration_card": has_ration_card,
-                "has_bank_account": has_bank_account,
-                "land_ownership": land_ownership,
-                "has_disability": has_disability,
-                "is_widow": is_widow,
-                "is_pregnant": is_pregnant,
-                "is_minority": is_minority,
-                "is_ex_serviceman": is_ex_serviceman,
-                "is_ward_of_esm": is_ex_serviceman,
-                "needs_housing": needs_housing,
-            }
-            
             st.session_state.stage = "processing"
             st.session_state.profile_submitted = True
             process_profile(profile)
@@ -793,6 +936,71 @@ def render_results():
         st.warning("Some matched schemes are past their review date: " + ", ".join(overdue))
     elif due_soon:
         st.warning("Some matched schemes need review soon: " + ", ".join(due_soon))
+
+    total_likely_have = sum(len(d.get("documents", {}).get("likely_have", [])) for d in documents)
+    total_need_to_get = sum(len(d.get("documents", {}).get("need_to_get", [])) for d in documents)
+    top_match_name = matches[0].get("name") if matches else "your top verified scheme"
+    st.markdown(
+        f"""
+        <div class="trust-panel">
+            <h4>Recommended Next Move</h4>
+            <p>Start with <strong>{top_match_name}</strong>, open the official source before applying, and prepare {total_need_to_get} document(s) you may still need. We estimate you already have {total_likely_have} likely-ready document(s) across your current matches.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    filter_col1, filter_col2, filter_col3 = st.columns(3)
+    with filter_col1:
+        priority_filter = st.selectbox("Priority", ["All", "High only", "High + Medium"], index=0)
+    with filter_col2:
+        available_categories = sorted(
+            {((m.get("full_scheme") or {}).get("category", "")).title() for m in matches if (m.get("full_scheme") or {}).get("category")}
+        )
+        category_filter = st.selectbox("Category", ["All"] + available_categories, index=0)
+    with filter_col3:
+        sort_by = st.selectbox("Sort", ["Confidence", "Priority", "Fewer documents", "Alphabetical"], index=0)
+
+    def get_doc_totals(match: dict) -> int:
+        info = next((d for d in documents if d.get("scheme_id") == match.get("id")), None)
+        if not info:
+            return 999
+        docs_data = info.get("documents", {})
+        return len(docs_data.get("likely_have", [])) + len(docs_data.get("need_to_get", []))
+
+    filtered_matches = []
+    for match in matches:
+        scheme = match.get("full_scheme") or get_scheme_by_id(match.get("id", ""))
+        if not scheme:
+            continue
+        category_name = scheme.get("category", "").title()
+        if priority_filter == "High only" and match.get("priority") != "HIGH":
+            continue
+        if priority_filter == "High + Medium" and match.get("priority") not in {"HIGH", "MEDIUM"}:
+            continue
+        if category_filter != "All" and category_name != category_filter:
+            continue
+        filtered_matches.append(match)
+
+    if sort_by == "Confidence":
+        filtered_matches.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+    elif sort_by == "Priority":
+        priority_rank = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+        filtered_matches.sort(key=lambda x: (priority_rank.get(x.get("priority", "LOW"), 3), -x.get("confidence", 0)))
+    elif sort_by == "Fewer documents":
+        filtered_matches.sort(key=get_doc_totals)
+    else:
+        filtered_matches.sort(key=lambda x: x.get("name", x.get("id", "")))
+
+    matches = filtered_matches
+    eligible_count = len([m for m in matches if m.get("status") == "ELIGIBLE"])
+    likely_count = len([m for m in matches if m.get("status") == "LIKELY_ELIGIBLE"])
+    high_priority = len([m for m in matches if m.get("priority") == "HIGH"])
+
+    visible_col1, visible_col2, visible_col3 = st.columns(3)
+    visible_col1.metric("Visible Matches", len(matches))
+    visible_col2.metric("Visible Eligible", eligible_count)
+    visible_col3.metric("Visible High Priority", high_priority)
     
     # ── PDF Download ──────────────────────────────────────────────
     col_dl1, col_dl2, col_dl3 = st.columns([1, 1, 1])
@@ -827,7 +1035,7 @@ def render_results():
     
     def render_scheme_list(scheme_list, tab_prefix="all"):
         if not scheme_list:
-            st.info("No currently verified schemes found in this category.")
+            st.info("No verified schemes match your current filters. Try changing the category, priority, or sort options above.")
             return
         
         for i, match in enumerate(scheme_list):
@@ -900,6 +1108,9 @@ def render_results():
                 if doc_info:
                     docs_data = doc_info.get("documents", {})
                     st.markdown("**📄 Documents Required:**")
+                    total_required = max(1, docs_data.get("total_required", 0))
+                    readiness = int((len(docs_data.get("likely_have", [])) / total_required) * 100)
+                    st.caption(f"Document readiness score: {readiness}%")
                     
                     col_have, col_need = st.columns(2)
                     with col_have:
