@@ -2031,6 +2031,12 @@ VERIFIED_SCHEME_METADATA = {
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },
+    "KCC": {
+        "official_source_url": "https://www.jansamarth.in/home",
+        "source_name": "JanSamarth Government Credit Portal",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
     "NSP-PRE-MATRIC-SC": {
         "official_source_url": "https://scholarships.gov.in/",
         "source_name": "National Scholarship Portal",
@@ -2193,6 +2199,12 @@ VERIFIED_SCHEME_METADATA = {
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },
+    "PMKVY": {
+        "official_source_url": "https://www.msde.gov.in/static/uploads/2024/02/8600d640ec9ca6f66daf4a8a46635f87.pdf",
+        "source_name": "MSDE Annual Report 2024-25 (PMKVY 4.0)",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
     "PM-DAKSH": {
         "official_source_url": "https://pmdaksh.dosje.gov.in/",
         "source_name": "PM-DAKSH Official Portal",
@@ -2211,11 +2223,41 @@ VERIFIED_SCHEME_METADATA = {
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
     },
+    "SAUBHAGYA": {
+        "official_source_url": "https://saubhagya.gov.in/",
+        "source_name": "Saubhagya Dashboard",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "archived",
+    },
+    "VAN-DHAN": {
+        "official_source_url": "https://trifed.tribal.gov.in/home",
+        "source_name": "TRIFED",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "verified",
+    },
     "ESM-SCHOLARSHIP": {
         "official_source_url": "https://www.ksb.gov.in/",
         "source_name": "Kendriya Sainik Board",
         "last_verified_on": "2026-03-18",
         "verification_status": "verified",
+    },
+    "FREE-SILAI-MACHINE": {
+        "official_source_url": None,
+        "source_name": "No reliable official central source found",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "archived",
+    },
+    "PMVVY": {
+        "official_source_url": "https://licindia.in/",
+        "source_name": "LIC (legacy/plan-level reference)",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "archived",
+    },
+    "PMAY-SENIOR": {
+        "official_source_url": "https://licindia.in/",
+        "source_name": "Mapped to legacy LIC pension product, not maintained as active housing guidance",
+        "last_verified_on": "2026-03-18",
+        "verification_status": "archived",
     },
 }
 
@@ -2285,4 +2327,7 @@ def get_scheme_count():
 
 def get_verified_scheme_count():
     """Return total number of actively verified schemes."""
-    return len(VERIFIED_SCHEME_METADATA)
+    return sum(
+        1 for metadata in VERIFIED_SCHEME_METADATA.values()
+        if metadata.get("verification_status") == "verified"
+    )

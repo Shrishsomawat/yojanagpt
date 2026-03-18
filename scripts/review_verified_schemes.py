@@ -24,6 +24,7 @@ def build_review_report() -> dict:
     verified = []
     needs_review = []
     overdue = []
+    archived = []
 
     for scheme in schemes:
         record = {
@@ -41,12 +42,15 @@ def build_review_report() -> dict:
             review_due = _parse_date(record["review_due_on"])
             if review_due and review_due < today:
                 overdue.append(record)
+        elif record["status"] == "archived":
+            archived.append(record)
         else:
             needs_review.append(record)
 
     verified.sort(key=lambda item: (item["review_due_on"] or "9999-99-99", item["id"]))
     needs_review.sort(key=lambda item: item["id"])
     overdue.sort(key=lambda item: (item["review_due_on"] or "9999-99-99", item["id"]))
+    archived.sort(key=lambda item: item["id"])
 
     return {
         "today": today.isoformat(),
@@ -54,6 +58,7 @@ def build_review_report() -> dict:
         "verified": verified,
         "needs_review": needs_review,
         "overdue": overdue,
+        "archived": archived,
     }
 
 
@@ -68,6 +73,7 @@ def print_review_report() -> None:
     print(f"Total schemes: {report['total']}")
     print(f"Verified: {len(report['verified'])}")
     print(f"Needs review: {len(report['needs_review'])}")
+    print(f"Archived / excluded: {len(report['archived'])}")
     print(f"Overdue verified schemes: {len(report['overdue'])}")
 
     if report["overdue"]:
@@ -75,6 +81,12 @@ def print_review_report() -> None:
         print("-" * 72)
         for item in report["overdue"]:
             print(f"{item['id']:<20} review due {item['review_due_on']}  source: {item['source']}")
+
+    if report["archived"]:
+        print("\nArchived Or Excluded Schemes")
+        print("-" * 72)
+        for item in report["archived"][:15]:
+            print(f"{item['id']:<20} status: {item['status']}  source: {item['source']}")
 
     print("\nNext Schemes To Review")
     print("-" * 72)
