@@ -280,6 +280,7 @@ def init_session_state():
         "error_message": None,
         "admin_view": False,
         "form_step": 0,
+        "wizard_step_selector": "1. Personal",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -638,6 +639,12 @@ def render_form_input():
 
     current_step = st.session_state.get("form_step", 0)
     step_labels = [f"{idx + 1}. {title}" for idx, (title, _) in enumerate(FORM_STEPS)]
+    expected_label = step_labels[current_step]
+    if st.session_state.get("wizard_step_selector") not in step_labels:
+        st.session_state.wizard_step_selector = expected_label
+    elif st.session_state.wizard_step_selector != expected_label:
+        st.session_state.wizard_step_selector = expected_label
+
     selected_label = st.radio(
         "Progress",
         options=step_labels,
@@ -729,11 +736,13 @@ def render_form_input():
     with nav_col1:
         if current_step > 0 and st.button("Back", use_container_width=True):
             st.session_state.form_step = current_step - 1
+            st.session_state.wizard_step_selector = step_labels[st.session_state.form_step]
             st.rerun()
     with nav_col2:
         if current_step < len(FORM_STEPS) - 1 and st.button("Next", use_container_width=True, type="secondary"):
             if validate_current_step():
                 st.session_state.form_step = current_step + 1
+                st.session_state.wizard_step_selector = step_labels[st.session_state.form_step]
                 st.rerun()
     with nav_col3:
         if current_step == len(FORM_STEPS) - 1 and st.button("Find My Schemes", use_container_width=True, type="primary"):
