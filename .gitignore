@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+knowledge_base/chroma_db/
+logs/
+*.pdf
+.DS_Store
+.idea/
+.vscode/
